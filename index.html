@@ -244,7 +244,10 @@
 
     contentType.addEventListener("change", toggleEpisodeFields);
     toggleEpisodeFields();
-    player.src = buildUrl();
+    const initialUrl = buildUrl();
+    if (initialUrl) {
+      player.src = initialUrl;
+    }
   </script>
 
 </body>
