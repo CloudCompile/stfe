@@ -170,7 +170,7 @@
   <div class="player-wrapper">
     <iframe
       id="player"
-      src="https://vidsrc-embed.ru/embed/tv?imdb=tt4574334&season=1&episode=1"
+      src=""
       allowfullscreen
       referrerpolicy="origin"
       sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
@@ -222,10 +222,7 @@
       const params = new URLSearchParams();
       params.set(idType.value, id);
 
-      let path = "tv";
-      if (contentType.value === "movie") {
-        path = "movie";
-      }
+      const path = contentType.value === "movie" ? "movie" : "tv";
 
       if (contentType.value === "episode") {
         const season = seasonInput.value || 1;
@@ -247,6 +244,7 @@
 
     contentType.addEventListener("change", toggleEpisodeFields);
     toggleEpisodeFields();
+    player.src = buildUrl();
   </script>
 
 </body>
