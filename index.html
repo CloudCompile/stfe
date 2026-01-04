@@ -660,7 +660,7 @@
         4: { title: "Chapter Four: The Body", description: "Refusing to believe Will is dead, Joyce tries to connect with her son. The boys give Eleven a makeover. Nancy and Jonathan form an unlikely alliance." },
         5: { title: "Chapter Five: The Flea and the Acrobat", description: "Hopper breaks into the lab while Nancy and Jonathan confront the force that took Will. The boys ask Mr. Clarke how to travel to another dimension." },
         6: { title: "Chapter Six: The Monster", description: "A frantic Jonathan looks for Nancy in the dark woods. Hopper and Joyce uncover the truth about the lab. Eleven struggles to reach Will." },
-        7: { title: "Chapter Seven: The Bathtub", description: "Eleven struggles to reach Will, while Lucas warns that 'ichael's men are close. Nancy and Jonathan show the police what Jonathan caught on camera." },
+        7: { title: "Chapter Seven: The Bathtub", description: "Eleven struggles to reach Will, while Lucas warns that Brenner's men are close. Nancy and Jonathan show the police what Jonathan caught on camera." },
         8: { title: "Chapter Eight: The Upside Down", description: "Dr. Brenner holds Hopper and Joyce for questioning while the boys wait with Eleven in the gym. Back at Will's, Nancy and Jonathan prepare for battle." }
       },
       2: {
@@ -738,6 +738,13 @@
       setTimeout(() => toast.classList.remove('show'), duration);
     }
 
+    // Utility function to escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     // Load seasons into dropdown
     function loadSeasons() {
       for (const season in episodesPerSeason) {
@@ -772,7 +779,7 @@
     function cacheEpisode(season, episode) {
       const key = `s${season}e${episode}`;
       
-      // Simulate caching (in a real app, this would cache the actual video data)
+      // Mark episode as cached (note: video content is streamed from external source and cannot be cached locally)
       const btnSpan = cacheBtn.querySelector('span');
       const originalText = btnSpan.textContent;
       btnSpan.textContent = 'Caching...';
@@ -938,21 +945,21 @@
         return `
           <div class="download-item">
             <div class="download-item-info">
-              <div class="download-item-title">${data?.title || `S${season} E${episode}`}</div>
+              <div class="download-item-title">${escapeHtml(data?.title || `S${season} E${episode}`)}</div>
               <div class="download-item-status cached">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:inline;vertical-align:middle;margin-right:4px;">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Cached • Season ${season}, Episode ${episode}
+                Cached • Season ${escapeHtml(season)}, Episode ${escapeHtml(episode)}
               </div>
             </div>
-            <button class="icon-btn" onclick="playEpisode(${season}, ${episode})" title="Play">
+            <button class="icon-btn play-btn" data-season="${escapeHtml(season)}" data-episode="${escapeHtml(episode)}" title="Play">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
-            <button class="icon-btn" onclick="removeCachedEpisode(${season}, ${episode})" title="Remove">
+            <button class="icon-btn remove-btn" data-season="${escapeHtml(season)}" data-episode="${escapeHtml(episode)}" title="Remove">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -960,6 +967,23 @@
           </div>
         `;
       }).join('');
+
+      // Add event listeners using event delegation
+      downloadsList.querySelectorAll('.play-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const season = btn.dataset.season;
+          const episode = btn.dataset.episode;
+          playEpisode(season, episode);
+        });
+      });
+
+      downloadsList.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const season = btn.dataset.season;
+          const episode = btn.dataset.episode;
+          removeCachedEpisode(season, episode);
+        });
+      });
     }
 
     // Play episode from downloads
@@ -1077,10 +1101,6 @@
     }
 
     init();
-
-    // Expose functions globally for inline onclick handlers
-    window.playEpisode = playEpisode;
-    window.removeCachedEpisode = removeCachedEpisode;
   </script>
 
 </body>

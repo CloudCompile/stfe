@@ -52,7 +52,11 @@ self.addEventListener('fetch', (event) => {
         const responseToCache = response.clone();
 
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          cache.put(event.request, responseToCache).catch((err) => {
+            console.warn('Failed to cache response:', err);
+          });
+        }).catch((err) => {
+          console.warn('Failed to open cache:', err);
         });
 
         return response;
