@@ -194,7 +194,7 @@
       if (!trimmed) return "";
 
       if (type === "imdb") {
-        const imdbMatch = trimmed.match(/tt\d{5,}/i);
+        const imdbMatch = trimmed.match(/tt\d{7,}/i);
         if (imdbMatch) return imdbMatch[0];
       } else if (type === "tmdb") {
         const tmdbQueryMatch = trimmed.match(/tmdb=([0-9]+)/i);
@@ -203,7 +203,7 @@
         const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d{3,})/i);
         if (tmdbMatch) return tmdbMatch[1];
 
-        const digits = trimmed.match(/\d{3,}/);
+        const digits = trimmed.match(/^\d{3,}$/);
         if (digits) return digits[0];
       }
 
