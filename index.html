@@ -203,8 +203,8 @@
         const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d+)/i);
         if (tmdbMatch) return tmdbMatch[1];
 
-        const digits = !/[/?=]/.test(trimmed) && trimmed.match(/^\d+$/);
-        if (digits) return digits[0];
+        const digitMatch = !/[/?=]/.test(trimmed) && trimmed.match(/^\d+$/);
+        if (digitMatch) return digitMatch[0];
       }
 
       return trimmed;
@@ -225,8 +225,10 @@
       const path = contentType.value === "movie" ? "movie" : "tv";
 
       if (contentType.value === "episode") {
-        const season = seasonInput.value || 1;
-        const episode = episodeInput.value || 1;
+        const seasonValue = seasonInput.value;
+        const episodeValue = episodeInput.value;
+        const season = seasonValue === "" ? 1 : seasonValue;
+        const episode = episodeValue === "" ? 1 : episodeValue;
         params.set("season", season);
         params.set("episode", episode);
       }
