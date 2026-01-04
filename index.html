@@ -194,7 +194,7 @@
       if (!trimmed) return "";
 
       if (type === "imdb") {
-        const imdbMatch = trimmed.match(/tt\d+/i);
+        const imdbMatch = trimmed.match(/^tt\d+$/i) || trimmed.match(/tt\d+/i);
         if (imdbMatch) return imdbMatch[0];
       } else if (type === "tmdb") {
         const tmdbQueryMatch = trimmed.match(/tmdb=([0-9]+)/i);
