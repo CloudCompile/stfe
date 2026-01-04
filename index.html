@@ -49,6 +49,45 @@
       appearance: none;
     }
 
+    form {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      align-items: center;
+    }
+
+    input,
+    button {
+      background: #1c1c1c;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
+    }
+
+    input {
+      flex: 2;
+      min-width: 150px;
+    }
+
+    #episodeFields {
+      display: flex;
+      gap: 8px;
+    }
+
+    #episodeFields input {
+      width: 90px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #e50914;
+      border-color: #b20710;
+      flex: 0;
+      white-space: nowrap;
+    }
+
     .player-wrapper {
       position: relative;
       width: 100%;
@@ -87,14 +126,51 @@
 <body>
 
   <header>
-    <select id="seasonSelect" aria-label="Select season"></select>
-    <select id="episodeSelect" aria-label="Select episode"></select>
+    <form id="searchForm">
+      <select id="contentType" aria-label="Select content type">
+        <option value="movie">Movie</option>
+        <option value="tv">TV Show</option>
+        <option value="episode" selected>Episode</option>
+      </select>
+
+      <select id="idType" aria-label="Select ID type">
+        <option value="imdb" selected>IMDb</option>
+        <option value="tmdb">TMDB</option>
+      </select>
+
+      <input
+        id="idInput"
+        type="text"
+        aria-label="Enter IMDb or TMDB ID"
+        placeholder="tt5433140 or 385687"
+        value="tt4574334"
+      />
+
+      <div id="episodeFields">
+        <input
+          id="seasonInput"
+          type="number"
+          min="1"
+          aria-label="Season number"
+          value="1"
+        />
+        <input
+          id="episodeInput"
+          type="number"
+          min="1"
+          aria-label="Episode number"
+          value="1"
+        />
+      </div>
+
+      <button type="submit">Watch</button>
+    </form>
   </header>
 
   <div class="player-wrapper">
     <iframe
       id="player"
-      src="https://vidsrc-embed.su/embed/tv?imdb=tt4574334&season=1&episode=1"
+      src="https://vidsrc-embed.ru/embed/tv?imdb=tt4574334&season=1&episode=1"
       allowfullscreen
       referrerpolicy="origin"
       sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
@@ -102,61 +178,75 @@
   </div>
 
   <script>
-    const imdbId = "tt4574334";
+    const BASE_URL = "https://vidsrc-embed.ru/embed";
 
-    const episodesPerSeason = {
-      1: 8,
-      2: 9,
-      3: 8,
-      4: 9
-    };
-
-    const seasonSelect = document.getElementById("seasonSelect");
-    const episodeSelect = document.getElementById("episodeSelect");
+    const form = document.getElementById("searchForm");
+    const contentType = document.getElementById("contentType");
+    const idType = document.getElementById("idType");
+    const idInput = document.getElementById("idInput");
+    const seasonInput = document.getElementById("seasonInput");
+    const episodeInput = document.getElementById("episodeInput");
+    const episodeFields = document.getElementById("episodeFields");
     const player = document.getElementById("player");
 
-    function loadSeasons() {
-      for (const season in episodesPerSeason) {
-        const opt = document.createElement("option");
-        opt.value = season;
-        opt.textContent = `Season ${season}`;
-        seasonSelect.appendChild(opt);
+    function extractId(value, type) {
+      const trimmed = value.trim();
+      if (!trimmed) return "";
+
+      if (type === "imdb") {
+        const imdbMatch = trimmed.match(/tt\d{5,}/i);
+        if (imdbMatch) return imdbMatch[0];
+      } else if (type === "tmdb") {
+        const tmdbQueryMatch = trimmed.match(/tmdb=([0-9]+)/i);
+        if (tmdbQueryMatch) return tmdbQueryMatch[1];
+
+        const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d{3,})/i);
+        if (tmdbMatch) return tmdbMatch[1];
+
+        const digits = trimmed.match(/\d{3,}/);
+        if (digits) return digits[0];
       }
+
+      return trimmed;
     }
 
-    function loadEpisodes(season) {
-      episodeSelect.innerHTML = "";
-      const total = episodesPerSeason[season];
+    function toggleEpisodeFields() {
+      const show = contentType.value === "episode";
+      episodeFields.style.display = show ? "flex" : "none";
+    }
 
-      for (let i = 1; i <= total; i++) {
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = `Episode ${i}`;
-        episodeSelect.appendChild(opt);
+    function buildUrl() {
+      const id = extractId(idInput.value, idType.value);
+      if (!id) return "";
+
+      const params = new URLSearchParams();
+      params.set(idType.value, id);
+
+      let path = "tv";
+      if (contentType.value === "movie") {
+        path = "movie";
       }
+
+      if (contentType.value === "episode") {
+        const season = seasonInput.value || 1;
+        const episode = episodeInput.value || 1;
+        params.set("season", season);
+        params.set("episode", episode);
+      }
+
+      return `${BASE_URL}/${path}?${params.toString()}`;
     }
 
-    function updatePlayer() {
-      const season = seasonSelect.value;
-      const episode = episodeSelect.value;
-
-      player.src =
-        `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`;
-    }
-
-    seasonSelect.addEventListener("change", () => {
-      loadEpisodes(seasonSelect.value);
-      episodeSelect.value = 1;
-      updatePlayer();
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const url = buildUrl();
+      if (url) {
+        player.src = url;
+      }
     });
 
-    episodeSelect.addEventListener("change", updatePlayer);
-
-    // Init
-    loadSeasons();
-    seasonSelect.value = 1;
-    loadEpisodes(1);
-    episodeSelect.value = 1;
+    contentType.addEventListener("change", toggleEpisodeFields);
+    toggleEpisodeFields();
   </script>
 
 </body>
