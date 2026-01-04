@@ -170,7 +170,7 @@
   <div class="player-wrapper">
     <iframe
       id="player"
-      src=""
+      src="https://vidsrc-embed.ru/embed/tv?imdb=tt4574334&season=1&episode=1"
       allowfullscreen
       referrerpolicy="origin"
       sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
@@ -203,7 +203,7 @@
         const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d+)/i);
         if (tmdbMatch) return tmdbMatch[1];
 
-        const digits = trimmed.match(/^\d+$/);
+        const digits = !/[/?=]/.test(trimmed) && trimmed.match(/^\d+$/);
         if (digits) return digits[0];
       }
 
