@@ -189,6 +189,11 @@
     const episodeFields = document.getElementById("episodeFields");
     const player = document.getElementById("player");
 
+    function parseWithDefault(value, defaultValue) {
+      const parsed = parseInt(value, 10);
+      return Number.isNaN(parsed) ? defaultValue : parsed;
+    }
+
     function extractId(value, type) {
       const trimmed = value.trim();
       if (!trimmed) return "";
@@ -204,8 +209,10 @@
         if (tmdbMatch) return tmdbMatch[1];
 
         // Allow plain numeric TMDB IDs when no URL characters are present
-        const digitMatch = !/[/?=]/.test(trimmed) && trimmed.match(/^\d+$/);
-        if (digitMatch) return digitMatch[0];
+        if (!/[/?=]/.test(trimmed)) {
+          const digitMatch = trimmed.match(/^\d+$/);
+          if (digitMatch) return digitMatch[0];
+        }
       }
 
       return trimmed;
@@ -226,10 +233,8 @@
       const path = contentType.value === "movie" ? "movie" : "tv";
 
       if (contentType.value === "episode") {
-        const seasonValue = parseInt(seasonInput.value, 10);
-        const episodeValue = parseInt(episodeInput.value, 10);
-        const season = Number.isNaN(seasonValue) ? 1 : seasonValue;
-        const episode = Number.isNaN(episodeValue) ? 1 : episodeValue;
+        const season = parseWithDefault(seasonInput.value, 1);
+        const episode = parseWithDefault(episodeInput.value, 1);
         params.set("season", season);
         params.set("episode", episode);
       }
