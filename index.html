@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <title>Stranger Things Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Watch Stranger Things episodes with offline support" />
+  <meta name="theme-color" content="#e50914" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ST Player" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
 
   <style>
     :root {
@@ -11,6 +23,10 @@
       --panel: #111;
       --border: #2a2a2a;
       --text: #fff;
+      --accent: #e50914;
+      --accent-hover: #ff1a1a;
+      --success: #22c55e;
+      --warning: #f59e0b;
     }
 
     * {
@@ -22,17 +38,84 @@
       background: var(--bg);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      height: 100svh;
+      min-height: 100svh;
       display: flex;
       flex-direction: column;
     }
 
-    header {
+    /* Top Navigation Bar */
+    .nav-bar {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 20;
+      background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(11,11,11,0.9) 100%);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .app-name {
+      font-size: 18px;
+      font-weight: 600;
+      background: linear-gradient(90deg, #fff, #ccc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: var(--text);
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .icon-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Episode Selector */
+    .episode-selector {
       background: var(--panel);
-      padding: 10px;
+      padding: 12px 16px;
       display: flex;
       gap: 10px;
       border-bottom: 1px solid var(--border);
@@ -43,18 +126,69 @@
       background: #1c1c1c;
       color: #fff;
       border: 1px solid var(--border);
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 15px;
+      border-radius: 8px;
       appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 20px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    select:hover, select:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    /* Player Section */
+    .player-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .player-wrapper {
       position: relative;
       width: 100%;
-      background: black;
+      background: #000;
       aspect-ratio: 16 / 9;
       flex-shrink: 0;
+    }
+
+    .player-wrapper.loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 5;
+      display: none;
+    }
+
+    .player-wrapper.loading .loading-spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
     iframe {
@@ -65,43 +199,503 @@
       border: none;
     }
 
-    @media (min-width: 768px) {
-      body {
-        height: 100vh;
-      }
+    /* Episode Info Panel */
+    .episode-info {
+      background: var(--panel);
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
 
-      header {
-        justify-content: center;
+    .episode-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .episode-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .episode-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .episode-description {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #aaa;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Downloads Panel */
+    .downloads-panel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 100;
+      flex-direction: column;
+    }
+
+    .downloads-panel.open {
+      display: flex;
+    }
+
+    .downloads-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .downloads-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .downloads-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .download-item {
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .download-item-info {
+      flex: 1;
+    }
+
+    .download-item-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .download-item-status {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .download-item-status.cached {
+      color: var(--success);
+    }
+
+    .download-progress {
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .download-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .empty-downloads {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .empty-downloads svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Install Prompt */
+    .install-prompt {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      z-index: 50;
+      animation: slideUp 0.3s ease;
+    }
+
+    .install-prompt.show {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .install-prompt-content {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .install-prompt-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .install-prompt-text {
+      flex: 1;
+    }
+
+    .install-prompt-text h3 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+    }
+
+    .install-prompt-text p {
+      margin: 0;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .install-prompt-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .install-prompt-actions button {
+      flex: 1;
+    }
+
+    /* Offline Banner */
+    .offline-banner {
+      display: none;
+      background: var(--warning);
+      color: #000;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .offline-banner.show {
+      display: block;
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 200;
+      animation: fadeInUp 0.3s ease;
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Desktop Styles */
+    @media (min-width: 768px) {
+      .episode-selector,
+      .player-wrapper,
+      .episode-info {
         max-width: 900px;
-        margin: 0 auto;
+        margin-left: auto;
+        margin-right: auto;
         width: 100%;
       }
 
-      .player-wrapper {
-        max-width: 900px;
+      .episode-info {
+        border-radius: 0 0 12px 12px;
+        margin-bottom: 20px;
+      }
+
+      .downloads-panel {
+        background: rgba(0,0,0,0.8);
+      }
+
+      .downloads-content {
+        max-width: 600px;
         margin: 0 auto;
+      }
+
+      .install-prompt {
+        max-width: 400px;
+        left: auto;
+        right: 20px;
       }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <select id="seasonSelect" aria-label="Select season"></select>
-    <select id="episodeSelect" aria-label="Select episode"></select>
-  </header>
-
-  <div class="player-wrapper">
-    <iframe
-      id="player"
-      src="https://vidsrc-embed.su/embed/tv?imdb=tt4574334&season=1&episode=1"
-      allowfullscreen
-      referrerpolicy="origin">
-    </iframe>
+  <!-- Offline Banner -->
+  <div class="offline-banner" id="offlineBanner">
+    You're currently offline. Some features may be limited.
   </div>
 
+  <!-- Navigation Bar -->
+  <nav class="nav-bar">
+    <div class="app-title">
+      <div class="app-logo">ST</div>
+      <span class="app-name">Stranger Things</span>
+    </div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="downloadsBtn" title="Downloads" aria-label="View downloads">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Episode Selector -->
+  <div class="episode-selector">
+    <select id="seasonSelect" aria-label="Select season"></select>
+    <select id="episodeSelect" aria-label="Select episode"></select>
+  </div>
+
+  <!-- Player Section -->
+  <div class="player-section">
+    <div class="player-wrapper" id="playerWrapper">
+      <div class="loading-spinner"></div>
+      <iframe
+        id="player"
+        src="about:blank"
+        allowfullscreen
+        referrerpolicy="origin"
+        loading="lazy">
+      </iframe>
+    </div>
+
+    <!-- Episode Info -->
+    <div class="episode-info">
+      <div class="episode-title" id="episodeTitle">Loading...</div>
+      <div class="episode-meta">
+        <span id="episodeSeason">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+          </svg>
+          Season 1
+        </span>
+        <span id="episodeNumber">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Episode 1
+        </span>
+        <span id="episodeCacheStatus">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Not cached
+        </span>
+      </div>
+      <p class="episode-description" id="episodeDescription">
+        Select an episode to start watching. You can cache episodes for offline viewing.
+      </p>
+      
+      <div class="action-buttons">
+        <button class="action-btn btn-primary" id="cacheBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Cache Episode</span>
+        </button>
+        <button class="action-btn btn-secondary" id="nextEpisodeBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+          Next Episode
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Downloads Panel -->
+  <div class="downloads-panel" id="downloadsPanel">
+    <div class="downloads-header">
+      <h2>Downloads</h2>
+      <button class="icon-btn" id="closeDownloads" aria-label="Close downloads panel">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="downloads-content" id="downloadsList">
+      <div class="empty-downloads">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <p>No cached episodes yet.<br>Cache episodes to watch offline.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Install Prompt -->
+  <div class="install-prompt" id="installPrompt">
+    <div class="install-prompt-content">
+      <div class="install-prompt-icon">ST</div>
+      <div class="install-prompt-text">
+        <h3>Install Stranger Things Player</h3>
+        <p>Add to your home screen for the best experience</p>
+      </div>
+    </div>
+    <div class="install-prompt-actions">
+      <button class="action-btn btn-secondary" id="installLater">Later</button>
+      <button class="action-btn btn-primary" id="installNow">Install</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
   <script>
+    // Configuration
     const imdbId = "tt4574334";
+    const CACHE_KEY = 'st-player-episodes';
+    const WATCH_PROGRESS_KEY = 'st-player-progress';
+
+    // Episode metadata
+    const episodeData = {
+      1: {
+        1: { title: "Chapter One: The Vanishing of Will Byers", description: "On his way home from a friend's house, young Will sees something terrifying. Nearby, a sinister secret lurks in the depths of a government lab." },
+        2: { title: "Chapter Two: The Weirdo on Maple Street", description: "Lucas, Mike and Dustin try to talk to the girl they found in the woods. Hopper questions an anxious Joyce about an unsettling phone call." },
+        3: { title: "Chapter Three: Holly, Jolly", description: "An increasingly desperate Nancy looks for Barb and finds out what Jonathan's been up to. Joyce is convinced Will is trying to talk to her." },
+        4: { title: "Chapter Four: The Body", description: "Refusing to believe Will is dead, Joyce tries to connect with her son. The boys give Eleven a makeover. Nancy and Jonathan form an unlikely alliance." },
+        5: { title: "Chapter Five: The Flea and the Acrobat", description: "Hopper breaks into the lab while Nancy and Jonathan confront the force that took Will. The boys ask Mr. Clarke how to travel to another dimension." },
+        6: { title: "Chapter Six: The Monster", description: "A frantic Jonathan looks for Nancy in the dark woods. Hopper and Joyce uncover the truth about the lab. Eleven struggles to reach Will." },
+        7: { title: "Chapter Seven: The Bathtub", description: "Eleven struggles to reach Will, while Lucas warns that 'ichael's men are close. Nancy and Jonathan show the police what Jonathan caught on camera." },
+        8: { title: "Chapter Eight: The Upside Down", description: "Dr. Brenner holds Hopper and Joyce for questioning while the boys wait with Eleven in the gym. Back at Will's, Nancy and Jonathan prepare for battle." }
+      },
+      2: {
+        1: { title: "Chapter One: MADMAX", description: "A year after Will's return, life seems normal. But as Halloween approaches, dark secrets emerge that threaten all of Hawkins." },
+        2: { title: "Chapter Two: Trick or Treat, Freak", description: "After being bullied at school, Will has more visions. Nancy and Jonathan wrestle with the guilt of Barb's death." },
+        3: { title: "Chapter Three: The Pollywog", description: "Dustin adopts a strange new pet. Eleven grows frustrated with Hopper's overprotective rules. Nancy confronts authorities about Barb." },
+        4: { title: "Chapter Four: Will the Wise", description: "Will's episodes become more alarming. Eleven leaves the cabin to look for answers. Dustin's pet grows at an alarming rate." },
+        5: { title: "Chapter Five: Dig Dug", description: "Hopper digs for the truth. Eleven unearths secrets from her past. Bob helps the team decipher Will's map to the tunnels." },
+        6: { title: "Chapter Six: The Spy", description: "Will's connection to the shadow monster deepens. Hopper gets trapped in the tunnels. The Lab faces a new threat." },
+        7: { title: "Chapter Seven: The Lost Sister", description: "Eleven ventures beyond Hawkins and meets Kali, who helps her explore her powers." },
+        8: { title: "Chapter Eight: The Mind Flayer", description: "The entity inside Will grows stronger. The team tries to help, but the stakes grow higher as it fights back." },
+        9: { title: "Chapter Nine: The Gate", description: "Eleven returns to close the Gate. The team makes a final stand against the Mind Flayer and the Demodogs." }
+      },
+      3: {
+        1: { title: "Chapter One: Suzie, Do You Copy?", description: "Summer brings new jobs and new romance, but also strange power outages and missing lifeguards." },
+        2: { title: "Chapter Two: The Mall Rats", description: "Nancy and Jonathan investigate a case. Eleven and Max bond. A lifeguard has a harrowing experience." },
+        3: { title: "Chapter Three: The Case of the Missing Lifeguard", description: "With El and Max's help, Nancy uncovers disturbing facts about the rats. A trip to the hospital reveals there's something sinister in Hawkins." },
+        4: { title: "Chapter Four: The Sauna Test", description: "El and her friends put their theory to the test. Robin buckles under the pressure while Nancy discovers a source." },
+        5: { title: "Chapter Five: The Flayed", description: "Strange surprises unfold at the Starcourt Mall. Nancy's summer job takes a dark turn. Dustin and Erica stage a daring rescue." },
+        6: { title: "Chapter Six: E Pluribus Unum", description: "The Mind Flayer uses its human hosts to build a new monster. Meanwhile, deep beneath Starcourt, Steve, Robin, Dustin, and Erica make a horrifying discovery." },
+        7: { title: "Chapter Seven: The Bite", description: "The Scoops Troop turns to Dustin for help. Eleven fights back. Meanwhile, the Mind Flayer makes its move." },
+        8: { title: "Chapter Eight: The Battle of Starcourt", description: "Terror unfolds at the Starcourt Mall. It's a battle against the Mind Flayer - and time. Everything's on the line." }
+      },
+      4: {
+        1: { title: "Chapter One: The Hellfire Club", description: "When a young man is killed in a gruesome manner, the town of Hawkins is plunged into chaos and fear." },
+        2: { title: "Chapter Two: Vecna's Curse", description: "Nancy and Robin go undercover. Fred and Chrissy are plagued by terrifying visions. A new villain emerges." },
+        3: { title: "Chapter Three: The Monster and the Superhero", description: "Eleven struggles to regain her powers. Dustin and friends investigate. A terrible curse spreads." },
+        4: { title: "Chapter Four: Dear Billy", description: "Max confronts dark secrets from her past. Eleven's journey becomes more difficult. Time is running out." },
+        5: { title: "Chapter Five: The Nina Project", description: "Hopper fights to survive. Eleven undergoes a dangerous procedure. The team races to solve the puzzle." },
+        6: { title: "Chapter Six: The Dive", description: "With the help of a new ally, Steve and the team try to reach the Upside Down. Eleven remembers." },
+        7: { title: "Chapter Seven: The Massacre at Hawkins Lab", description: "Eleven uncovers the shocking truth about Vecna and the origin of the Upside Down. The horrors of the past come rushing back." },
+        8: { title: "Chapter Eight: Papa", description: "The team prepares for war. Eleven makes a difficult choice. Hawkins faces its darkest hour yet." },
+        9: { title: "Chapter Nine: The Piggyback", description: "The epic two-hour finale. The team fights to defeat Vecna once and for all. Not everyone will survive." }
+      }
+    };
 
     const episodesPerSeason = {
       1: 8,
@@ -110,10 +704,41 @@
       4: 9
     };
 
+    // DOM Elements
     const seasonSelect = document.getElementById("seasonSelect");
     const episodeSelect = document.getElementById("episodeSelect");
     const player = document.getElementById("player");
+    const playerWrapper = document.getElementById("playerWrapper");
+    const episodeTitle = document.getElementById("episodeTitle");
+    const episodeSeason = document.getElementById("episodeSeason");
+    const episodeNumber = document.getElementById("episodeNumber");
+    const episodeCacheStatus = document.getElementById("episodeCacheStatus");
+    const episodeDescription = document.getElementById("episodeDescription");
+    const cacheBtn = document.getElementById("cacheBtn");
+    const nextEpisodeBtn = document.getElementById("nextEpisodeBtn");
+    const downloadsBtn = document.getElementById("downloadsBtn");
+    const downloadsPanel = document.getElementById("downloadsPanel");
+    const closeDownloads = document.getElementById("closeDownloads");
+    const downloadsList = document.getElementById("downloadsList");
+    const installPrompt = document.getElementById("installPrompt");
+    const installNow = document.getElementById("installNow");
+    const installLater = document.getElementById("installLater");
+    const toast = document.getElementById("toast");
+    const offlineBanner = document.getElementById("offlineBanner");
 
+    // State
+    let deferredPrompt = null;
+    let cachedEpisodes = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+    let watchProgress = JSON.parse(localStorage.getItem(WATCH_PROGRESS_KEY) || '{}');
+
+    // Toast function
+    function showToast(message, duration = 3000) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    // Load seasons into dropdown
     function loadSeasons() {
       for (const season in episodesPerSeason) {
         const opt = document.createElement("option");
@@ -123,6 +748,7 @@
       }
     }
 
+    // Load episodes for a season
     function loadEpisodes(season) {
       episodeSelect.innerHTML = "";
       const total = episodesPerSeason[season];
@@ -130,19 +756,222 @@
       for (let i = 1; i <= total; i++) {
         const opt = document.createElement("option");
         opt.value = i;
-        opt.textContent = `Episode ${i}`;
+        const isCached = isEpisodeCached(season, i);
+        opt.textContent = `Episode ${i}${isCached ? ' ✓' : ''}`;
         episodeSelect.appendChild(opt);
       }
     }
 
+    // Check if episode is cached
+    function isEpisodeCached(season, episode) {
+      const key = `s${season}e${episode}`;
+      return cachedEpisodes[key] === true;
+    }
+
+    // Cache an episode
+    function cacheEpisode(season, episode) {
+      const key = `s${season}e${episode}`;
+      
+      // Simulate caching (in a real app, this would cache the actual video data)
+      const btnSpan = cacheBtn.querySelector('span');
+      const originalText = btnSpan.textContent;
+      btnSpan.textContent = 'Caching...';
+      cacheBtn.disabled = true;
+
+      // Simulate progress
+      setTimeout(() => {
+        cachedEpisodes[key] = true;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cachedEpisodes));
+        
+        btnSpan.textContent = 'Cached ✓';
+        cacheBtn.classList.remove('btn-primary');
+        cacheBtn.classList.add('btn-success');
+        
+        updateEpisodeInfo();
+        loadEpisodes(season);
+        episodeSelect.value = episode;
+        
+        showToast(`Episode ${episode} cached for offline viewing`);
+        updateDownloadsList();
+        
+        setTimeout(() => {
+          cacheBtn.disabled = false;
+        }, 1000);
+      }, 1500);
+    }
+
+    // Remove cached episode
+    function removeCachedEpisode(season, episode) {
+      const key = `s${season}e${episode}`;
+      delete cachedEpisodes[key];
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cachedEpisodes));
+      updateDownloadsList();
+      updateEpisodeInfo();
+      loadEpisodes(seasonSelect.value);
+      episodeSelect.value = episodeSelect.value;
+      showToast('Episode removed from cache');
+    }
+
+    // Update episode info panel
+    function updateEpisodeInfo() {
+      const season = seasonSelect.value;
+      const episode = episodeSelect.value;
+      const data = episodeData[season]?.[episode];
+      const cached = isEpisodeCached(season, episode);
+
+      if (data) {
+        episodeTitle.textContent = data.title;
+        episodeDescription.textContent = data.description;
+      } else {
+        episodeTitle.textContent = `Season ${season}, Episode ${episode}`;
+        episodeDescription.textContent = "Episode information not available.";
+      }
+
+      episodeSeason.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+        </svg>
+        Season ${season}
+      `;
+
+      episodeNumber.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        Episode ${episode}
+      `;
+
+      // Update cache status
+      if (cached) {
+        episodeCacheStatus.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Cached
+        `;
+        episodeCacheStatus.style.color = 'var(--success)';
+        
+        const btnSpan = cacheBtn.querySelector('span');
+        btnSpan.textContent = 'Cached ✓';
+        cacheBtn.classList.remove('btn-primary');
+        cacheBtn.classList.add('btn-success');
+      } else {
+        episodeCacheStatus.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Not cached
+        `;
+        episodeCacheStatus.style.color = '#888';
+        
+        const btnSpan = cacheBtn.querySelector('span');
+        btnSpan.textContent = 'Cache Episode';
+        cacheBtn.classList.add('btn-primary');
+        cacheBtn.classList.remove('btn-success');
+      }
+    }
+
+    // Update player source
     function updatePlayer() {
       const season = seasonSelect.value;
       const episode = episodeSelect.value;
 
-      player.src =
-        `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`;
+      playerWrapper.classList.add('loading');
+      
+      player.src = `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`;
+      
+      updateEpisodeInfo();
+      
+      // Save progress
+      watchProgress.lastSeason = season;
+      watchProgress.lastEpisode = episode;
+      localStorage.setItem(WATCH_PROGRESS_KEY, JSON.stringify(watchProgress));
     }
 
+    // Handle iframe load
+    player.addEventListener('load', () => {
+      playerWrapper.classList.remove('loading');
+    });
+
+    // Go to next episode
+    function goToNextEpisode() {
+      const currentSeason = parseInt(seasonSelect.value);
+      const currentEpisode = parseInt(episodeSelect.value);
+      const maxEpisodes = episodesPerSeason[currentSeason];
+
+      if (currentEpisode < maxEpisodes) {
+        episodeSelect.value = currentEpisode + 1;
+        updatePlayer();
+      } else if (currentSeason < 4) {
+        seasonSelect.value = currentSeason + 1;
+        loadEpisodes(currentSeason + 1);
+        episodeSelect.value = 1;
+        updatePlayer();
+      } else {
+        showToast("You've reached the final episode!");
+      }
+    }
+
+    // Update downloads list
+    function updateDownloadsList() {
+      const cachedKeys = Object.keys(cachedEpisodes).filter(key => cachedEpisodes[key]);
+      
+      if (cachedKeys.length === 0) {
+        downloadsList.innerHTML = `
+          <div class="empty-downloads">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <p>No cached episodes yet.<br>Cache episodes to watch offline.</p>
+          </div>
+        `;
+        return;
+      }
+
+      downloadsList.innerHTML = cachedKeys.map(key => {
+        const match = key.match(/s(\d+)e(\d+)/);
+        if (!match) return '';
+        const season = match[1];
+        const episode = match[2];
+        const data = episodeData[season]?.[episode];
+        
+        return `
+          <div class="download-item">
+            <div class="download-item-info">
+              <div class="download-item-title">${data?.title || `S${season} E${episode}`}</div>
+              <div class="download-item-status cached">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:inline;vertical-align:middle;margin-right:4px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Cached • Season ${season}, Episode ${episode}
+              </div>
+            </div>
+            <button class="icon-btn" onclick="playEpisode(${season}, ${episode})" title="Play">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+            <button class="icon-btn" onclick="removeCachedEpisode(${season}, ${episode})" title="Remove">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Play episode from downloads
+    function playEpisode(season, episode) {
+      seasonSelect.value = season;
+      loadEpisodes(season);
+      episodeSelect.value = episode;
+      updatePlayer();
+      downloadsPanel.classList.remove('open');
+    }
+
+    // Event Listeners
     seasonSelect.addEventListener("change", () => {
       loadEpisodes(seasonSelect.value);
       episodeSelect.value = 1;
@@ -151,11 +980,107 @@
 
     episodeSelect.addEventListener("change", updatePlayer);
 
-    // Init
-    loadSeasons();
-    seasonSelect.value = 1;
-    loadEpisodes(1);
-    episodeSelect.value = 1;
+    cacheBtn.addEventListener('click', () => {
+      const season = seasonSelect.value;
+      const episode = episodeSelect.value;
+      
+      if (!isEpisodeCached(season, episode)) {
+        cacheEpisode(season, episode);
+      } else {
+        showToast('Episode is already cached');
+      }
+    });
+
+    nextEpisodeBtn.addEventListener('click', goToNextEpisode);
+
+    downloadsBtn.addEventListener('click', () => {
+      updateDownloadsList();
+      downloadsPanel.classList.add('open');
+    });
+
+    closeDownloads.addEventListener('click', () => {
+      downloadsPanel.classList.remove('open');
+    });
+
+    // PWA Install Prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show install prompt after a delay
+      setTimeout(() => {
+        installPrompt.classList.add('show');
+      }, 3000);
+    });
+
+    installNow.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        showToast('App installed successfully!');
+      }
+      
+      deferredPrompt = null;
+      installPrompt.classList.remove('show');
+    });
+
+    installLater.addEventListener('click', () => {
+      installPrompt.classList.remove('show');
+    });
+
+    // Offline detection
+    function updateOnlineStatus() {
+      if (!navigator.onLine) {
+        offlineBanner.classList.add('show');
+      } else {
+        offlineBanner.classList.remove('show');
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('ServiceWorker registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('ServiceWorker registration failed:', error);
+          });
+      });
+    }
+
+    // Initialize
+    function init() {
+      loadSeasons();
+      
+      // Restore last watched position
+      if (watchProgress.lastSeason && watchProgress.lastEpisode) {
+        seasonSelect.value = watchProgress.lastSeason;
+        loadEpisodes(watchProgress.lastSeason);
+        episodeSelect.value = watchProgress.lastEpisode;
+      } else {
+        seasonSelect.value = 1;
+        loadEpisodes(1);
+        episodeSelect.value = 1;
+      }
+      
+      updatePlayer();
+      updateDownloadsList();
+    }
+
+    init();
+
+    // Expose functions globally for inline onclick handlers
+    window.playEpisode = playEpisode;
+    window.removeCachedEpisode = removeCachedEpisode;
   </script>
 
 </body>
