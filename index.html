@@ -170,7 +170,7 @@
   <div class="player-wrapper">
     <iframe
       id="player"
-      src="https://vidsrc-embed.ru/embed/tv?imdb=tt4574334&season=1&episode=1"
+      src=""
       allowfullscreen
       referrerpolicy="origin"
       sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
@@ -203,6 +203,7 @@
         const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d+)/i);
         if (tmdbMatch) return tmdbMatch[1];
 
+        // Allow plain numeric TMDB IDs when no URL characters are present
         const digitMatch = !/[/?=]/.test(trimmed) && trimmed.match(/^\d+$/);
         if (digitMatch) return digitMatch[0];
       }
@@ -225,10 +226,10 @@
       const path = contentType.value === "movie" ? "movie" : "tv";
 
       if (contentType.value === "episode") {
-        const seasonValue = seasonInput.value;
-        const episodeValue = episodeInput.value;
-        const season = seasonValue === "" ? 1 : seasonValue;
-        const episode = episodeValue === "" ? 1 : episodeValue;
+        const seasonValue = parseInt(seasonInput.value, 10);
+        const episodeValue = parseInt(episodeInput.value, 10);
+        const season = Number.isNaN(seasonValue) ? 1 : seasonValue;
+        const episode = Number.isNaN(episodeValue) ? 1 : episodeValue;
         params.set("season", season);
         params.set("episode", episode);
       }
