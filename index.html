@@ -170,7 +170,7 @@
   <div class="player-wrapper">
     <iframe
       id="player"
-      src="https://vidsrc-embed.ru/embed/tv?imdb=tt4574334&season=1&episode=1"
+      src=""
       allowfullscreen
       referrerpolicy="origin"
       sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
@@ -199,10 +199,10 @@
       if (!trimmed) return "";
 
       if (type === "imdb") {
-        const imdbMatch = trimmed.match(/^tt\d+$/i) || trimmed.match(/tt\d+/i);
+        const imdbMatch = trimmed.match(/tt\d+/i);
         if (imdbMatch) return imdbMatch[0];
       } else if (type === "tmdb") {
-        const tmdbQueryMatch = trimmed.match(/tmdb=([0-9]+)/i);
+        const tmdbQueryMatch = trimmed.match(/tmdb=(\d+)/i);
         if (tmdbQueryMatch) return tmdbQueryMatch[1];
 
         const tmdbMatch = trimmed.match(/(?:movie|tv)\/(\d+)/i);
@@ -210,7 +210,7 @@
 
         // Allow plain numeric TMDB IDs when no URL characters are present
         // (avoid matching full URLs or query strings)
-        if (!/[/?=]/.test(trimmed)) {
+        if (!/[\/?=]/.test(trimmed)) {
           const digitMatch = trimmed.match(/^\d+$/);
           if (digitMatch) return digitMatch[0];
         }
@@ -231,6 +231,7 @@
       const params = new URLSearchParams();
       params.set(idType.value, id);
 
+      // Episodes also use the tv path with season/episode params
       const path = contentType.value === "movie" ? "movie" : "tv";
 
       if (contentType.value === "episode") {
