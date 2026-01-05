@@ -31,6 +31,19 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
 
+  <!-- CSP: blocks most popup + navigation bullshit at the page level -->
+  <meta http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      frame-src https://vidsrc-embed.su;
+      connect-src 'none';
+      object-src 'none';
+      base-uri 'none';
+      form-action 'none';
+    ">
+
   <style>
     :root {
       --bg: #0b0b0b;
@@ -43,9 +56,7 @@
       --warning: #f59e0b;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -169,7 +180,6 @@
       width: 100%;
       background: #000;
       aspect-ratio: 16 / 9;
-      flex-shrink: 0;
     }
 
     .player-wrapper.loading::after {
@@ -526,6 +536,7 @@
       .downloads-content {
         max-width: 600px;
         margin: 0 auto;
+        width: 100%;
       }
 
       .install-prompt {
@@ -783,6 +794,13 @@
         opt.textContent = `Episode ${i}${isCached ? ' ✓' : ''}`;
         episodeSelect.appendChild(opt);
       }
+
+      return trimmed;
+    }
+
+    function toggleEpisodeFields() {
+      const show = contentType.value === "episode";
+      episodeFields.style.display = show ? "flex" : "none";
     }
 
     // Check if episode is cached
@@ -1012,6 +1030,7 @@
       updatePlayer();
       downloadsPanel.classList.remove('open');
     }
+  }
 
     // Event Listeners
     seasonSelect.addEventListener("change", () => {
@@ -1020,7 +1039,20 @@
       updatePlayer();
     });
 
-    episodeSelect.addEventListener("change", updatePlayer);
+    contentType.addEventListener("change", toggleEpisodeFields);
+    toggleEpisodeFields();
+    const initialUrl = buildUrl();
+    if (initialUrl) {
+      player.src = initialUrl;
+    }
+  </script>
+  function updatePlayer() {
+    const src =
+      `${baseEmbed}?imdb=${imdbId}&season=${seasonSelect.value}&episode=${episodeSelect.value}`;
+
+    lastSafeSrc = src;
+    player.src = src;
+  }
 
     cacheBtn.addEventListener('click', () => {
       const season = seasonSelect.value;
