@@ -9,6 +9,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ST Player" />
+
+  <!-- CSP: blocks most popup + navigation issues -->
+  <meta http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      frame-src https://vidsrc-embed.su https://vidsrc-embed.ru;
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'none';
+      form-action 'none';
+    ">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
@@ -559,7 +573,8 @@
         src="about:blank"
         allowfullscreen
         referrerpolicy="origin"
-        loading="lazy">
+        loading="lazy"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
       </iframe>
     </div>
 
@@ -730,6 +745,7 @@
     let deferredPrompt = null;
     let cachedEpisodes = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
     let watchProgress = JSON.parse(localStorage.getItem(WATCH_PROGRESS_KEY) || '{}');
+    let lastSafeSrc = '';
 
     // Toast function
     function showToast(message, duration = 3000) {
@@ -885,7 +901,9 @@
 
       playerWrapper.classList.add('loading');
       
-      player.src = `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`;
+      const src = `https://vidsrc-embed.su/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`;
+      lastSafeSrc = src;
+      player.src = src;
       
       updateEpisodeInfo();
       
@@ -1080,6 +1098,25 @@
           });
       });
     }
+
+    /* ---------------- POPUP + REDIRECT BLOCKING ---------------- */
+
+    // Kill window.open attempts at the parent level
+    window.open = () => null;
+
+    // If iframe tries to redirect itself, snap it back
+    // Uses a less frequent interval to reduce performance impact
+    setInterval(() => {
+      try {
+        if (lastSafeSrc && player.src !== lastSafeSrc) {
+          player.src = lastSafeSrc;
+        }
+      } catch {
+        // cross-origin error, ignore
+      }
+    }, 2000);
+
+    /* ---------------- INIT ---------------- */
 
     // Initialize
     function init() {
