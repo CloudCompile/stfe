@@ -5,6 +5,19 @@
   <title>Stranger Things Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+  <!-- CSP: blocks most popup + navigation bullshit at the page level -->
+  <meta http-equiv="Content-Security-Policy"
+    content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      frame-src https://vidsrc-embed.su;
+      connect-src 'none';
+      object-src 'none';
+      base-uri 'none';
+      form-action 'none';
+    ">
+
   <style>
     :root {
       --bg: #0b0b0b;
@@ -13,15 +26,13 @@
       --text: #fff;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: system-ui, sans-serif;
       height: 100svh;
       display: flex;
       flex-direction: column;
@@ -46,7 +57,6 @@
       padding: 12px;
       font-size: 16px;
       border-radius: 6px;
-      appearance: none;
     }
 
     form {
@@ -93,7 +103,6 @@
       width: 100%;
       background: black;
       aspect-ratio: 16 / 9;
-      flex-shrink: 0;
     }
 
     iframe {
@@ -105,20 +114,11 @@
     }
 
     @media (min-width: 768px) {
-      body {
-        height: 100vh;
-      }
-
-      header {
-        justify-content: center;
-        max-width: 900px;
-        margin: 0 auto;
-        width: 100%;
-      }
-
+      header,
       .player-wrapper {
         max-width: 900px;
         margin: 0 auto;
+        width: 100%;
       }
     }
   </style>
@@ -243,6 +243,7 @@
 
       return `${BASE_URL}/${path}?${params.toString()}`;
     }
+  }
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -259,6 +260,57 @@
       player.src = initialUrl;
     }
   </script>
+  function updatePlayer() {
+    const src =
+      `${baseEmbed}?imdb=${imdbId}&season=${seasonSelect.value}&episode=${episodeSelect.value}`;
+
+    lastSafeSrc = src;
+    player.src = src;
+  }
+
+  seasonSelect.onchange = () => {
+    loadEpisodes(seasonSelect.value);
+    episodeSelect.value = 1;
+    updatePlayer();
+  };
+
+  episodeSelect.onchange = updatePlayer;
+
+  /* ---------------- POPUP + REDIRECT BLOCKING ---------------- */
+
+  // Kill window.open attempts at the parent level
+  window.open = () => null;
+
+  // Prevent top-level navigation hijacks
+  window.addEventListener("beforeunload", e => {
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  // If iframe tries to redirect itself, snap it back
+  setInterval(() => {
+    try {
+      if (player.src !== lastSafeSrc) {
+        player.src = lastSafeSrc;
+      }
+    } catch {
+      // cross-origin tantrum, ignore
+    }
+  }, 1000);
+
+  // Stop focus stealing (common popup trick)
+  window.addEventListener("blur", () => {
+    window.focus();
+  });
+
+  /* ---------------- INIT ---------------- */
+
+  loadSeasons();
+  seasonSelect.value = 1;
+  loadEpisodes(1);
+  episodeSelect.value = 1;
+  updatePlayer();
+</script>
 
 </body>
 </html>
