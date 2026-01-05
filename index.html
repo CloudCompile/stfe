@@ -794,13 +794,6 @@
         opt.textContent = `Episode ${i}${isCached ? ' ✓' : ''}`;
         episodeSelect.appendChild(opt);
       }
-
-      return trimmed;
-    }
-
-    function toggleEpisodeFields() {
-      const show = contentType.value === "episode";
-      episodeFields.style.display = show ? "flex" : "none";
     }
 
     // Check if episode is cached
@@ -1030,7 +1023,6 @@
       updatePlayer();
       downloadsPanel.classList.remove('open');
     }
-  }
 
     // Event Listeners
     seasonSelect.addEventListener("change", () => {
@@ -1038,21 +1030,6 @@
       episodeSelect.value = 1;
       updatePlayer();
     });
-
-    contentType.addEventListener("change", toggleEpisodeFields);
-    toggleEpisodeFields();
-    const initialUrl = buildUrl();
-    if (initialUrl) {
-      player.src = initialUrl;
-    }
-  </script>
-  function updatePlayer() {
-    const src =
-      `${baseEmbed}?imdb=${imdbId}&season=${seasonSelect.value}&episode=${episodeSelect.value}`;
-
-    lastSafeSrc = src;
-    player.src = src;
-  }
 
     cacheBtn.addEventListener('click', () => {
       const season = seasonSelect.value;
